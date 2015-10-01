@@ -6,7 +6,7 @@
 
 # Deux etudiants:
 # Si vous etes deux etudiants: Indiquer vos codes permanents.
-CODES_PERMANENTS='ABCD01020304,GHIJ11121314'
+CODES_PERMANENTS='GEFK18029309,GARS13069209'
 
 
 # Un etudiant:
