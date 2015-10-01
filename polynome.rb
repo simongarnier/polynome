@@ -198,8 +198,11 @@ class Polynome
   #
   def ==( autre )
     DBC.require self.canonique? && autre.canonique?, "*** Erreur: arguments non canoniques"
-
-    nil
+    return false if autre.taille != self.taille
+    @coeffs.each_with_index do |coeff, i|
+      return false if coeff != autre[i]
+    end
+    return true
   end
 
   #
@@ -209,7 +212,12 @@ class Polynome
   # @return [Polynome] la somme de self et autre
   #
   def +( autre )
-    nil
+    DBC.require self.canonique? && autre.canonique?, "*** Erreur: arguments non canoniques"
+    a = []
+    [self.taille - 1, autre.taille - 1].max.downto(0) do |index|
+      a.unshift((index < self.taille ? self[index] : 0) + (index < autre.taille ? autre[index] : 0))
+    end
+    return Polynome.new(*a)
   end
 
   #
@@ -219,7 +227,12 @@ class Polynome
   # @return [Fixnum] Valeur du polynome au point x
   #
   def valeur( x )
-    nil
+    pow = 0
+    @coeffs.reduce(0) do |memo, coeff|
+      memo += coeff * x ** pow
+      pow += 1
+      memo
+    end
   end
 
   #
@@ -290,7 +303,15 @@ class Polynome
 
   def fois_seq( autre )
     (puts "fois_seq( #{autre} )"; puts Polynome.parametres) if DEBUG
-    nil
+    offset = 0
+    a = (autre.taille-1).downto(0).map do |index|
+      ret = @coeffs.map do |coeff|
+	coeff * autre[index]
+      end + offset.times.map{ 0 }
+      offset += 1
+      ret.reverse
+    end
+    Polynome.new(*a.last.zip(*a[0...a.size-1]).map{|a| a.compact.reduce(:+)}.reverse.flatten)
   end
 
   def fois_forkjoin_bloc( autre )
