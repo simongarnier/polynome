@@ -309,7 +309,7 @@ class Polynome
   # 'dispatcher', i.e., la methode '*'.
   #############################################################
 
-  def fois_seq( autre )
+  def fois_seq_naif( autre )
     (puts "fois_seq( #{autre} )"; puts Polynome.parametres) if DEBUG
     offset = 0
     a = (autre.taille-1).downto(0).map do |index|
@@ -320,6 +320,17 @@ class Polynome
       ret.reverse
     end
     Polynome.new(*a.last.zip(*a[0...a.size-1]).map{|a| a.compact.reduce(:+)}.reverse.flatten)
+  end
+
+  def fois_seq(autre)
+    (puts "fois_seq( #{autre} )"; puts Polynome.parametres) if DEBUG
+    degree_max = autre.taille-1 + taille-1
+    coeffs = (0..degree_max).map do |degree|
+      (0...autre.taille).to_a.product((0...taille).to_a).select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)| 
+	memo += autre[a_idx] * self[c_idx]
+      end
+    end
+    Polynome.new(*coeffs)
   end
 
   def fois_forkjoin_bloc( autre )
