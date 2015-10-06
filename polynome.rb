@@ -227,12 +227,20 @@ class Polynome
   # @return [Fixnum] Valeur du polynome au point x
   #
   def valeur( x )
-    pow = 0
-    @coeffs.reduce(0) do |memo, coeff|
-      memo += coeff * x ** pow
-      pow += 1
-      memo
+    def valeur_(x, i = 0, j= @coeffs.count-1, seuil = 0)
+      return @coeffs[i] * x ** i if i == j
+      return @coeffs[i] * x ** i + @coeffs[j] * x ** j if (j - i).abs == 1
+
+      if !Polynome.taille_bloc.nil? && seuil > Polynome.taille_bloc then 
+	return @coeffs[i..j].map do |index|
+	  @coeffs[index] * x ** index
+	end.reduce(:+)
+      end
+
+      f = PRuby.future { valeur_(x, i, (j+i)/2, seuil + 1) }
+      valeur_(x, (j+i)/2+1, j, seuil + 1 ) + f.value
     end
+    valeur_(x)
   end
 
   #
