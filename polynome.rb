@@ -346,6 +346,17 @@ class Polynome
   # Solution statique non fork-join.
   def fois_par_statique( autre )
     (puts "fois_par_statique( #{autre} )"; puts Polynome.parametres) if DEBUG
+    degree_max = autre.taille-1 + taille-1
+    mode = if Polynome.taille_bloc then
+      {static: Polynome.taille_bloc}
+    else
+      {static: true}
+    end 
+    coeffs = (0..degree_max).pmap(mode) do |degree|
+      (0...autre.taille).to_a.product((0...taille).to_a).select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)|
+        memo += autre[a_idx] * self[c_idx]
+      end
+    end 
     nil
   end
 
