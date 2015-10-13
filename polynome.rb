@@ -292,6 +292,11 @@ class Polynome
 
   private
 
+  def split_range(r)
+    rs = r.first + r.last
+    [(r.first..rs/2), (rs/2+1..r.last)]
+  end
+
   #
   # Chaine representant l'etat exact des parametres d'execution. Utile
   # pour le debogage.
@@ -359,13 +364,26 @@ class Polynome
         memo += autre[a_idx] * self[c_idx]
       end
     end 
-    nil
+    Polynome.new(*coeffs)
   end
 
   # Solution dynamique.
   def fois_par_dynamique( autre )
     (puts "fois_par_dynamique( #{autre} )"; puts Polynome.parametres) if DEBUG
-    nil
+    mode = if Polynome.taille_bloc then
+      {dynamic: Polynome.taille_bloc}
+    else
+      {dynamic: true}
+    end
+    degree_max = autre.taille-1 + taille-1
+    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    coeffs = produit.pmap(mode) do |(a_idx, c_idx)|
+      [a_idx + c_idx, autre[a_idx] * self[c_idx]]
+    end.inject((degree_max + 1).times.map{0}) do |memo, (degree, coeff)| 
+      memo[degree] += coeff 
+      memo
+    end
+    Polynome.new(*coeffs)
   end
 
 end
