@@ -339,9 +339,26 @@ class Polynome
     Polynome.new(*coeffs)
   end
 
-  def fois_forkjoin_bloc( autre )
+   def fois_forkjoin_bloc(autre)
     (puts "fois_forkjoin_bloc( #{autre} )"; puts Polynome.parametres) if DEBUG
-    nil
+    degree_max = autre.taille-1 + taille-1
+    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    slicer = degree_max / Polynome.nb_threads
+    slicer = 0 ? 1 : slicer
+    groups = (0..degree_max).to_a.each_slice(slicer).to_a
+    
+    coeffs = Array.new(degree_max)
+
+    PRuby.pcall(0...groups.size, lambda do |k|
+        groups[k].each do |degree|
+          coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
+            memo + autre[a_idx] * self[c_idx]
+          end
+        end
+      end)
+
+    Polynome.new(*coeffs)
+
   end
 
   def fois_forkjoin_cyclique( autre )
