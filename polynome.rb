@@ -231,10 +231,10 @@ class Polynome
       return @coeffs[i] * x ** i if i == j
       return @coeffs[i] * x ** i + @coeffs[j] * x ** j if (j - i).abs == 1
 
-      if !Polynome.taille_bloc.nil? && seuil > Polynome.taille_bloc then 
-	return @coeffs[i..j].map do |index|
-	  @coeffs[index] * x ** index
-	end.reduce(:+)
+      if !Polynome.taille_bloc.nil? && seuil > Polynome.taille_bloc then
+        return @coeffs[i..j].map do |index|
+          @coeffs[index] * x ** index
+        end.reduce(:+)
       end
 
       f = PRuby.future { valeur_(x, i, (j+i)/2, seuil + 1) }
@@ -319,7 +319,7 @@ class Polynome
     offset = 0
     a = (autre.taille-1).downto(0).map do |index|
       ret = @coeffs.map do |coeff|
-	coeff * autre[index]
+        coeff * autre[index]
       end + offset.times.map{ 0 }
       offset += 1
       ret.reverse
@@ -332,8 +332,8 @@ class Polynome
     degree_max = autre.taille-1 + taille-1
     produit = (0...autre.taille).to_a.product((0...taille).to_a)
     coeffs = (0..degree_max).map do |degree|
-      produit.select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)| 
-	memo += autre[a_idx] * self[c_idx]
+      produit.select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)|
+        memo += autre[a_idx] * self[c_idx]
       end
     end
     Polynome.new(*coeffs)
@@ -346,24 +346,45 @@ class Polynome
     slicer = degree_max / Polynome.nb_threads
     slicer = 0 ? 1 : slicer
     groups = (0..degree_max).to_a.each_slice(slicer).to_a
-    
+
     coeffs = Array.new(degree_max)
 
-    PRuby.pcall(0...groups.size, lambda do |k|
-        groups[k].each do |degree|
-          coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
-            memo + autre[a_idx] * self[c_idx]
-          end
+    work = lambda do |k|
+      groups[k].each do |degree|
+        coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
+          memo + autre[a_idx] * self[c_idx]
         end
-      end)
+      end
+    end
+
+    PRuby.pcall 0...groups.size, work
 
     Polynome.new(*coeffs)
-
   end
 
   def fois_forkjoin_cyclique( autre )
     (puts "fois_forkjoin_cyclique( #{autre} )"; puts Polynome.parametres) if DEBUG
-    nil
+    degree_max = autre.taille-1 + taille-1
+    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    tasks = TaskBag.new(Polynome.nb_threads)
+
+    (0..degree_max).to_a.each_slice(Polynome.taille_bloc).each { |g| tasks.put g }
+
+    coeffs = Array.new(degree_max)
+
+    work = lambda do |k|
+      while group = tasks.get
+        group.each do |degree|
+          coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
+            memo + autre[a_idx] * self[c_idx]
+          end
+        end
+      end
+    end
+
+    PRuby.pcall 0...Polynome.nb_threads, work
+
+    Polynome.new(*coeffs)
   end
 
   # Solution statique non fork-join.
@@ -375,12 +396,12 @@ class Polynome
       {static: Polynome.taille_bloc}
     else
       {static: true}
-    end 
+    end
     coeffs = (0..degree_max).pmap(mode) do |degree|
       produit.select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)|
         memo += autre[a_idx] * self[c_idx]
       end
-    end 
+    end
     Polynome.new(*coeffs)
   end
 
@@ -396,8 +417,8 @@ class Polynome
     produit = (0...autre.taille).to_a.product((0...taille).to_a)
     coeffs = produit.pmap(mode) do |(a_idx, c_idx)|
       [a_idx + c_idx, autre[a_idx] * self[c_idx]]
-    end.inject((degree_max + 1).times.map{0}) do |memo, (degree, coeff)| 
-      memo[degree] += coeff 
+    end.inject((degree_max + 1).times.map{0}) do |memo, (degree, coeff)|
+      memo[degree] += coeff
       memo
     end
     Polynome.new(*coeffs)
