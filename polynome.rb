@@ -330,9 +330,9 @@ class Polynome
   def fois_seq(autre)
     (puts "fois_seq( #{autre} )"; puts Polynome.parametres) if DEBUG
     degree_max = autre.taille-1 + taille-1
-    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    produit_by_degree = (0...autre.taille).to_a.product((0...taille).to_a).group_by{ |(a, c)| a+c}
     coeffs = (0..degree_max).map do |degree|
-      produit.select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)|
+      produit_by_degree[degree].reduce(0) do |memo, (a_idx, c_idx)|
         memo += autre[a_idx] * self[c_idx]
       end
     end
@@ -342,7 +342,7 @@ class Polynome
    def fois_forkjoin_bloc(autre)
     (puts "fois_forkjoin_bloc( #{autre} )"; puts Polynome.parametres) if DEBUG
     degree_max = autre.taille-1 + taille-1
-    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    produit_by_degree = (0...autre.taille).to_a.product((0...taille).to_a).group_by{ |(a, c)| a+c}
     slicer = degree_max / Polynome.nb_threads
     slicer = 0 ? 1 : slicer
     groups = (0..degree_max).to_a.each_slice(slicer).to_a
@@ -351,7 +351,7 @@ class Polynome
 
     work = lambda do |k|
       groups[k].each do |degree|
-        coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
+        coeffs[degree] = produit_by_degree[degree].reduce(0) do |memo, (a_idx, c_idx)|
           memo + autre[a_idx] * self[c_idx]
         end
       end
@@ -365,7 +365,7 @@ class Polynome
   def fois_forkjoin_cyclique( autre )
     (puts "fois_forkjoin_cyclique( #{autre} )"; puts Polynome.parametres) if DEBUG
     degree_max = autre.taille-1 + taille-1
-    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    produit_by_degree = (0...autre.taille).to_a.product((0...taille).to_a).group_by{ |(a, c)| a+c}
     tasks = TaskBag.new(Polynome.nb_threads)
 
     (0..degree_max).to_a.each_slice(Polynome.taille_bloc).each { |g| tasks.put g }
@@ -375,7 +375,7 @@ class Polynome
     work = lambda do |k|
       while group = tasks.get
         group.each do |degree|
-          coeffs[degree] = produit.select { |a, c| a+c == degree }.reduce(0) do |memo, (a_idx, c_idx)|
+          coeffs[degree] = produit_by_degree[degree].reduce(0) do |memo, (a_idx, c_idx)|
             memo + autre[a_idx] * self[c_idx]
           end
         end
@@ -391,14 +391,14 @@ class Polynome
   def fois_par_statique( autre )
     (puts "fois_par_statique( #{autre} )"; puts Polynome.parametres) if DEBUG
     degree_max = autre.taille-1 + taille-1
-    produit = (0...autre.taille).to_a.product((0...taille).to_a)
+    produit_by_degree = (0...autre.taille).to_a.product((0...taille).to_a).group_by{ |(a, c)| a+c}
     mode = if Polynome.taille_bloc then
-      {static: Polynome.taille_bloc}
+      {static: Polynome.taille_bloc, nb_threads: Polynome.nb_threads}
     else
-      {static: true}
+      {static: true, nb_threads: Polynome.nb_threads}
     end
     coeffs = (0..degree_max).pmap(mode) do |degree|
-      produit.select{|a, c| a+c == degree}.reduce(0) do |memo, (a_idx, c_idx)|
+      produit_by_degree[degree].reduce(0) do |memo, (a_idx, c_idx)|
         memo += autre[a_idx] * self[c_idx]
       end
     end
@@ -409,9 +409,9 @@ class Polynome
   def fois_par_dynamique( autre )
     (puts "fois_par_dynamique( #{autre} )"; puts Polynome.parametres) if DEBUG
     mode = if Polynome.taille_bloc then
-      {dynamic: Polynome.taille_bloc}
+      {dynamic: Polynome.taille_bloc, nb_threads: Polynome.nb_threads}
     else
-      {dynamic: true}
+      {dynamic: true, nb_threads: Polynome.nb_threads}
     end
     degree_max = autre.taille-1 + taille-1
     produit = (0...autre.taille).to_a.product((0...taille).to_a)
