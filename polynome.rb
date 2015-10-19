@@ -413,14 +413,16 @@ class Polynome
     else
       {dynamic: true, nb_threads: Polynome.nb_threads}
     end
+
     degree_max = autre.taille-1 + taille-1
-    produit = (0...autre.taille).to_a.product((0...taille).to_a)
-    coeffs = produit.pmap(mode) do |(a_idx, c_idx)|
-      [a_idx + c_idx, autre[a_idx] * self[c_idx]]
-    end.inject((degree_max + 1).times.map{0}) do |memo, (degree, coeff)|
-      memo[degree] += coeff
-      memo
+    produit_by_degree = (0...autre.taille).to_a.product((0...taille).to_a).group_by{ |(a, c)| a+c}
+
+    coeffs = (0..degree_max).pmap(mode) do |degree|
+      produit_by_degree[degree].reduce(0) do |memo, (a_idx, c_idx)|
+        memo += autre[a_idx] * self[c_idx]
+      end
     end
+
     Polynome.new(*coeffs)
   end
 
