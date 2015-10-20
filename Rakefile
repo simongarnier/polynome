@@ -102,6 +102,10 @@ task :remise do
   sh %{ssh oto.labunix.uqam.ca oto confirmer_remise tremblay_gu INF5171 #{CODES_PERMANENTS}}
 end
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a636b1ff75834b1cd7d61e6157d186853dfdde19
 ##################################################
 # Taches pour la generation des graphiques.
 ##################################################
