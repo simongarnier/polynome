@@ -10,7 +10,7 @@ CODES_PERMANENTS='GEFK18029309,GARS13069209'
 
 
 # Un etudiant:
-# Si vous etes seul: Supprimer le diese en debut de ligne et 
+# Si vous etes seul: Supprimer le diese en debut de ligne et
 # indiquer votre code permanent (sans changer le nom de la variable).
 #CODES_PERMANENTS='ABCD01020304'
 
@@ -120,7 +120,7 @@ end
 desc 'Graphiques'
 task :graphiques => GRAPHIQUES.keys.map { |taille| "temps-#{taille}.txt" } do
   GRAPHIQUES.each_pair do |taille, maxs|
-    sh %{plot-temps.sh  #{taille} #{maxs[0]}}
-    sh %{plot-acc.sh  #{taille} #{maxs[1]}}
+    sh %{./plot-temps.sh  #{taille} #{maxs[0]}}
+    sh %{./plot-acc.sh  #{taille} #{maxs[1]}}
   end
 end
