@@ -124,5 +124,3 @@ task :graphiques => GRAPHIQUES.keys.map { |taille| "temps-#{taille}.txt" } do
     sh %{plot-acc.sh  #{taille} #{maxs[1]}}
   end
 end
-
-Guy T.
