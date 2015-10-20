@@ -23,7 +23,7 @@ TAILLE = ENV['TAILLE'] ? ENV['TAILLE'].to_i : TAILLE_DEFAUT
 ###############################################################
 # Nombre de fois ou on repete l'execution.
 ###############################################################
-NB_FOIS_DEFAUT = 20 # Pour plus d'uniformite de moyenne
+NB_FOIS_DEFAUT = 5 # Pour plus d'uniformite de moyenne
 
 NB_FOIS = ENV['NB_FOIS'] ? ENV['NB_FOIS'].to_i : NB_FOIS_DEFAUT
 
