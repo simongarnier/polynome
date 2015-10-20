@@ -102,3 +102,25 @@ task :remise do
   sh %{ssh oto.labunix.uqam.ca oto confirmer_remise tremblay_gu INF5171 #{CODES_PERMANENTS}}
 end
 
+##################################################
+# Taches pour la generation des graphiques.
+##################################################
+
+GRAPHIQUES = {
+  512 => [0.5, 5.0],
+  1024 => [2.0, 5.0],
+}
+
+task :benchmark_gnuplot_data do
+  GRAPHIQUES.keys.each do |taille|
+    sh %{export TAILLE=#{taille}; ruby polynome_bm_gnuplot_data.rb > temps-#{taille}.txt}
+  end
+end
+
+desc 'Graphiques'
+task :graphiques => GRAPHIQUES.keys.map { |taille| "temps-#{taille}.txt" } do
+  GRAPHIQUES.each_pair do |taille, maxs|
+    sh %{plot-temps.sh  #{taille} #{maxs[0]}}
+    sh %{plot-acc.sh  #{taille} #{maxs[1]}}
+  end
+end
